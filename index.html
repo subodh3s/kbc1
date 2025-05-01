@@ -92,77 +92,58 @@ h1 {
   </div>
 
   <script>
-    const questions = [
+    const levels = [
   {
-    question: "Which planet is known as the Red Planet?",
-    options: ["Earth", "Venus", "Mars", "Jupiter"],
-    answer: 2,
-  },
-  {
-    question: "Who wrote the Indian National Anthem?",
-    options: [
-      "Bankim Chandra Chatterjee",
-      "Rabindranath Tagore",
-      "Subhash Chandra Bose",
-      "Jawaharlal Nehru",
-    ],
-    answer: 1,
-  },
-  {
-    question: "What is the capital of Australia?",
-    options: ["Sydney", "Melbourne", "Perth", "Canberra"],
-    answer: 3,
+    level: 1,
+    questions: [
+      {
+        question: "Which planet is known as the Red Planet?",
+        options: ["Earth", "Venus", "Mars", "Jupiter"],
+        answer: 2,
+      },
+      {
+        question: "Who wrote the Indian National Anthem?",
+        options: ["Bankim Chandra Chatterjee", "Rabindranath Tagore", "Subhash Chandra Bose", "Jawaharlal Nehru"],
+        answer: 1,
+      },
+    ]
   },
   {
-    question: "Who was the first Prime Minister of India?",
-    options: [
-      "Sardar Patel",
-      "Rajendra Prasad",
-      "Jawaharlal Nehru",
-      "Lal Bahadur Shastri",
-    ],
-    answer: 2,
+    level: 2,
+    questions: [
+      {
+        question: "What is the capital of Australia?",
+        options: ["Sydney", "Melbourne", "Perth", "Canberra"],
+        answer: 3,
+      },
+      {
+        question: "Which is the largest ocean?",
+        options: ["Atlantic", "Indian", "Pacific", "Arctic"],
+        answer: 2,
+      },
+    ]
   },
   {
-    question: "Which is the largest ocean?",
-    options: ["Atlantic", "Indian", "Pacific", "Arctic"],
-    answer: 2,
-  },
-   {
-    question: "Which is the Dumbest Sea Creature?",
-    options: ["Shark", "Dolphin", "Ocean Sunfish", "Dumbo octopus"],
-    answer: 2,
-  },
-    {
-    question: "Where was the first FIFA World Cup held?",
-    options: ["Brazil", "Uruguay", "Nepal", "China"],
-    answer: 1,
-  },
-   {
-    question: "Which is the Richest Football Club?",
-    options: ["Chelsea FC", "FC Barcelona", "Manchester City", "Real Madrid"],
-    answer: 3,
-  },
-    {
-    question: "When was first World War started?",
-    options: ["1914", "1969", "1823", "1916"],
-    answer: 0,
-  },
-   {
-    question: "Strongest man in the world?",
-    options: ["Tarun Gill", "Tom Stoltman", "Dwayne Johnson", "Nick Best"],
-    answer: 1,
-  },
-       {
-    question: "What is the speed of Light?",
-    options: ["299 792 458 m / s", "299 612 595 m / s", "299 911 458 m / s", "297 792 696 m / s"],
-    answer: 0,
+    level: 3,
+    questions: [
+      {
+        question: "What is the speed of light?",
+        options: ["299 792 458 m / s", "299 612 595 m / s", "299 911 458 m / s", "297 792 696 m / s"],
+        answer: 0,
+      },
+      {
+        question: "Strongest man in the world?",
+        options: ["Tarun Gill", "Tom Stoltman", "Dwayne Johnson", "Nick Best"],
+        answer: 1,
+      },
+    ]
   },
 ];
 
-const prizeLevels = [1000, 5000, 10000, 50000, 100000, 250000, 500000, 1000000, 2500000, 5000000, 10000000];
+let currentLevel = 0;
 let currentQuestion = 0;
 let currentPrize = 0;
+const prizePerLevel = [5000, 20000, 100000]; // You can expand this
 let lifelineUsed = false;
 
 const questionEl = document.getElementById("question");
@@ -172,8 +153,9 @@ const optionBtns = document.querySelectorAll(".option-btn");
 const lifelineBtn = document.getElementById("lifeline-btn");
 
 function loadQuestion() {
-  const q = questions[currentQuestion];
-  questionEl.textContent = q.question;
+  const levelData = levels[currentLevel];
+  const q = levelData.questions[currentQuestion];
+  questionEl.textContent = `Level ${levelData.level}: ${q.question}`;
   optionBtns.forEach((btn, index) => {
     btn.textContent = `${String.fromCharCode(65 + index)}. ${q.options[index]}`;
     btn.disabled = false;
@@ -184,20 +166,36 @@ function loadQuestion() {
 }
 
 function selectAnswer(index) {
-  const correct = questions[currentQuestion].answer;
+  const qData = levels[currentLevel].questions[currentQuestion];
+  const correct = qData.answer;
+
   if (index === correct) {
-    currentPrize = prizeLevels[currentQuestion];
-    resultEl.textContent = `✅ Correct! You won ₹${currentPrize}`;
+    resultEl.textContent = `✅ Correct!`;
     currentQuestion++;
-    if (currentQuestion < questions.length) {
+
+    if (currentQuestion < levels[currentLevel].questions.length) {
       setTimeout(loadQuestion, 1500);
     } else {
-      resultEl.textContent = `🏆 Congratulations! You are a Crorepati! Total: ₹${currentPrize}`;
-      disableAllOptions();
+      // Completed this level
+      currentPrize = prizePerLevel[currentLevel];
+      resultEl.textContent = `🎉 Level ${levels[currentLevel].level} cleared! Prize: ₹${currentPrize}`;
+      currentLevel++;
+      currentQuestion = 0;
+      lifelineUsed = false;
+      lifelineBtn.disabled = false;
+
+      if (currentLevel < levels.length) {
+        setTimeout(loadQuestion, 2000);
+      } else {
+        resultEl.textContent = `🏆 Congratulations! You completed all levels! Total Winnings: ₹${currentPrize}`;
+        disableAllOptions();
+        lifelineBtn.disabled = true;
+      }
     }
   } else {
-    resultEl.textContent = `❌ Wrong! Correct answer was: ${questions[currentQuestion].options[correct]}`;
+    resultEl.textContent = `❌ Wrong! Correct answer was: ${qData.options[correct]}`;
     disableAllOptions();
+    lifelineBtn.disabled = true;
   }
 }
 
@@ -210,7 +208,7 @@ function useLifeline() {
   lifelineUsed = true;
   lifelineBtn.disabled = true;
 
-  const correct = questions[currentQuestion].answer;
+  const correct = levels[currentLevel].questions[currentQuestion].answer;
   const hideCount = 2;
   let hidden = 0;
   while (hidden < hideCount) {
@@ -227,8 +225,7 @@ function quitGame() {
   disableAllOptions();
   lifelineBtn.disabled = true;
 }
-
-loadQuestion();
+    loadQuestion();
 
   </script>
 </body>
