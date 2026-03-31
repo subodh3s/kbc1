@@ -1,232 +1,180 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Kaun Banega Crorepati</title>
+  <title>Tic Tac Toe AI</title>
   <style>
     body {
-  font-family: Arial, sans-serif;
-  background-color: #0f3057;
-  color: #ffffff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  margin: 0;
-}
+      font-family: Arial;
+      text-align: center;
+      background: #f5f5f5;
+    }
 
-.container {
-  text-align: center;
-  max-width: 600px;
-  padding: 20px;
-  background-color: #00587a;
-  border-radius: 10px;
-}
+    h1 {
+      margin-top: 20px;
+    }
 
-h1 {
-  margin-bottom: 20px;
-}
+    #board {
+      width: 300px;
+      margin: 20px auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+    }
 
-#question {
-  font-size: 1.2em;
-  margin-bottom: 20px;
-}
+    .cell {
+      width: 100px;
+      height: 100px;
+      font-size: 2rem;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: 2px solid #333;
+      transition: 0.2s;
+    }
 
-.options {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
+    .cell:hover {
+      background: #ddd;
+    }
 
-.option-btn {
-  padding: 10px;
-  background-color: #00adb5;
-  border: none;
-  border-radius: 5px;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.option-btn:disabled {
-  background-color: #444;
-  cursor: not-allowed;
-}
-
-.lifeline-box {
-  margin-top: 20px;
-}
-
-#result {
-  margin-top: 20px;
-  font-size: 1.1em;
-}
-
-#prize {
-  margin-bottom: 10px;
-  font-size: 1.1em;
-  font-weight: bold;
-}
-
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🪙 Kaun Banega Crorepati 🪙</h1>
-    <div id="prize">Prize: ₹0</div>
-    <div id="question-box">
-      <h2 id="question">Loading...</h2>
-      <div class="options">
-        <button class="option-btn" onclick="selectAnswer(0)">A</button>
-        <button class="option-btn" onclick="selectAnswer(1)">B</button>
-        <button class="option-btn" onclick="selectAnswer(2)">C</button>
-        <button class="option-btn" onclick="selectAnswer(3)">D</button>
-      </div>
-    </div>
-    <div class="lifeline-box">
-      <button id="lifeline-btn" onclick="useLifeline()">Use 50:50 Lifeline</button>
-      <button onclick="quitGame()">Quit</button>
-    </div>
-    <div id="result"></div>
-  </div>
 
-  <script>
-    const levels = [
-  {
-    level: 1,
-    questions: [
-      {
-        question: "Which planet is known as the Red Planet?",
-        options: ["Earth", "Venus", "Mars", "Jupiter"],
-        answer: 2,
-      },
-      {
-        question: "Who wrote the Indian National Anthem?",
-        options: ["Bankim Chandra Chatterjee", "Rabindranath Tagore", "Subhash Chandra Bose", "Jawaharlal Nehru"],
-        answer: 1,
-      },
-    ]
-  },
-  {
-    level: 2,
-    questions: [
-      {
-        question: "What is the capital of Australia?",
-        options: ["Sydney", "Melbourne", "Perth", "Canberra"],
-        answer: 3,
-      },
-      {
-        question: "Which is the largest ocean?",
-        options: ["Atlantic", "Indian", "Pacific", "Arctic"],
-        answer: 2,
-      },
-    ]
-  },
-  {
-    level: 3,
-    questions: [
-      {
-        question: "What is the speed of light?",
-        options: ["299 792 458 m / s", "299 612 595 m / s", "299 911 458 m / s", "297 792 696 m / s"],
-        answer: 0,
-      },
-      {
-        question: "Strongest man in the world?",
-        options: ["Tarun Gill", "Tom Stoltman", "Dwayne Johnson", "Nick Best"],
-        answer: 1,
-      },
-    ]
-  },
-];
+<h1>Tic Tac Toe (AI)</h1>
+<div id="board"></div>
+<button onclick="restart()">Restart</button>
 
-let currentLevel = 0;
-let currentQuestion = 0;
-let currentPrize = 0;
-const prizePerLevel = [5000, 20000, 100000]; // You can expand this
-let lifelineUsed = false;
+<script>
+  const boardElement = document.getElementById("board");
+  let board = ["", "", "", "", "", "", "", "", ""];
+  let human = "X";
+  let ai = "O";
+  let gameOver = false;
 
-const questionEl = document.getElementById("question");
-const prizeEl = document.getElementById("prize");
-const resultEl = document.getElementById("result");
-const optionBtns = document.querySelectorAll(".option-btn");
-const lifelineBtn = document.getElementById("lifeline-btn");
+  function createBoard() {
+    boardElement.innerHTML = "";
+    board.forEach((cell, index) => {
+      const div = document.createElement("div");
+      div.classList.add("cell");
+      div.innerText = cell;
+      div.addEventListener("click", () => humanMove(index));
+      boardElement.appendChild(div);
+    });
+  }
 
-function loadQuestion() {
-  const levelData = levels[currentLevel];
-  const q = levelData.questions[currentQuestion];
-  questionEl.textContent = `Level ${levelData.level}: ${q.question}`;
-  optionBtns.forEach((btn, index) => {
-    btn.textContent = `${String.fromCharCode(65 + index)}. ${q.options[index]}`;
-    btn.disabled = false;
-    btn.style.visibility = "visible";
-  });
-  resultEl.textContent = "";
-  prizeEl.textContent = `Prize: ₹${currentPrize}`;
-}
+  function humanMove(index) {
+    if (board[index] !== "" || gameOver) return;
 
-function selectAnswer(index) {
-  const qData = levels[currentLevel].questions[currentQuestion];
-  const correct = qData.answer;
+    board[index] = human;
+    createBoard();
 
-  if (index === correct) {
-    resultEl.textContent = `✅ Correct!`;
-    currentQuestion++;
+    if (checkWinner(board, human)) {
+      alert("You win!");
+      gameOver = true;
+      return;
+    }
 
-    if (currentQuestion < levels[currentLevel].questions.length) {
-      setTimeout(loadQuestion, 1500);
-    } else {
-      // Completed this level
-      currentPrize = prizePerLevel[currentLevel];
-      resultEl.textContent = `🎉 Level ${levels[currentLevel].level} cleared! Prize: ₹${currentPrize}`;
-      currentLevel++;
-      currentQuestion = 0;
-      lifelineUsed = false;
-      lifelineBtn.disabled = false;
+    if (isDraw()) {
+      alert("Draw!");
+      gameOver = true;
+      return;
+    }
 
-      if (currentLevel < levels.length) {
-        setTimeout(loadQuestion, 2000);
-      } else {
-        resultEl.textContent = `🏆 Congratulations! You completed all levels! Total Winnings: ₹${currentPrize}`;
-        disableAllOptions();
-        lifelineBtn.disabled = true;
+    setTimeout(aiMove, 300);
+  }
+
+  function aiMove() {
+    let bestScore = -Infinity;
+    let move;
+
+    for (let i = 0; i < 9; i++) {
+      if (board[i] === "") {
+        board[i] = ai;
+        let score = minimax(board, 0, false);
+        board[i] = "";
+        if (score > bestScore) {
+          bestScore = score;
+          move = i;
+        }
       }
     }
-  } else {
-    resultEl.textContent = `❌ Wrong! Correct answer was: ${qData.options[correct]}`;
-    disableAllOptions();
-    lifelineBtn.disabled = true;
-  }
-}
 
-function disableAllOptions() {
-  optionBtns.forEach((btn) => (btn.disabled = true));
-}
+    board[move] = ai;
+    createBoard();
 
-function useLifeline() {
-  if (lifelineUsed) return;
-  lifelineUsed = true;
-  lifelineBtn.disabled = true;
+    if (checkWinner(board, ai)) {
+      alert("AI wins!");
+      gameOver = true;
+      return;
+    }
 
-  const correct = levels[currentLevel].questions[currentQuestion].answer;
-  const hideCount = 2;
-  let hidden = 0;
-  while (hidden < hideCount) {
-    const rand = Math.floor(Math.random() * 4);
-    if (rand !== correct && optionBtns[rand].style.visibility !== "hidden") {
-      optionBtns[rand].style.visibility = "hidden";
-      hidden++;
+    if (isDraw()) {
+      alert("Draw!");
+      gameOver = true;
     }
   }
-}
 
-function quitGame() {
-  resultEl.textContent = `🏁 You quit! Total winnings: ₹${currentPrize}`;
-  disableAllOptions();
-  lifelineBtn.disabled = true;
-}
-    loadQuestion();
+  function minimax(newBoard, depth, isMaximizing) {
+    if (checkWinner(newBoard, ai)) return 1;
+    if (checkWinner(newBoard, human)) return -1;
+    if (!newBoard.includes("")) return 0;
 
-  </script>
+    if (isMaximizing) {
+      let bestScore = -Infinity;
+      for (let i = 0; i < 9; i++) {
+        if (newBoard[i] === "") {
+          newBoard[i] = ai;
+          let score = minimax(newBoard, depth + 1, false);
+          newBoard[i] = "";
+          bestScore = Math.max(score, bestScore);
+        }
+      }
+      return bestScore;
+    } else {
+      let bestScore = Infinity;
+      for (let i = 0; i < 9; i++) {
+        if (newBoard[i] === "") {
+          newBoard[i] = human;
+          let score = minimax(newBoard, depth + 1, true);
+          newBoard[i] = "";
+          bestScore = Math.min(score, bestScore);
+        }
+      }
+      return bestScore;
+    }
+  }
+
+  function checkWinner(b, player) {
+    const wins = [
+      [0,1,2],[3,4,5],[6,7,8],
+      [0,3,6],[1,4,7],[2,5,8],
+      [0,4,8],[2,4,6]
+    ];
+
+    return wins.some(combo =>
+      combo.every(i => b[i] === player)
+    );
+  }
+
+  function isDraw() {
+    return board.every(cell => cell !== "");
+  }
+
+  function restart() {
+    board = ["", "", "", "", "", "", "", "", ""];
+    gameOver = false;
+    createBoard();
+  }
+
+  createBoard();
+</script>
+
 </body>
 </html>
