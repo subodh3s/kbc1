@@ -4,9 +4,10 @@
   <title>Tic Tac Toe AI</title>
   <style>
     body {
-      font-family: Arial;
+      font-family: Arial, sans-serif;
       text-align: center;
-      background: #f5f5f5;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
     }
 
     h1 {
@@ -14,45 +15,79 @@
     }
 
     #board {
-      width: 300px;
+      width: 320px;
       margin: 20px auto;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 5px;
+      gap: 8px;
     }
 
     .cell {
       width: 100px;
       height: 100px;
-      font-size: 2rem;
-      background: white;
+      font-size: 2.5rem;
+      background: rgba(255, 255, 255, 0.9);
+      color: #333;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      border: 2px solid #333;
-      transition: 0.2s;
+      border-radius: 10px;
+      transition: 0.3s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
 
     .cell:hover {
-      background: #ddd;
+      transform: scale(1.08);
+      background: #fff;
+    }
+
+    .cell:active {
+      transform: scale(0.95);
+    }
+
+    button, select {
+      padding: 10px 15px;
+      margin: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
     }
 
     button {
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
+      background: #ff7eb3;
+      color: white;
+    }
+
+    button:hover {
+      background: #ff4f91;
+    }
+
+    select {
+      background: white;
+      color: black;
     }
   </style>
 </head>
 <body>
 
-<h1>Tic Tac Toe (AI)</h1>
+<h1>🎮 Tic Tac Toe AI</h1>
+
+<label>Difficulty: </label>
+<select id="difficulty">
+  <option value="easy">Easy</option>
+  <option value="medium">Medium</option>
+  <option value="hard" selected>Hard</option>
+</select>
+
 <div id="board"></div>
 <button onclick="restart()">Restart</button>
 
 <script>
   const boardElement = document.getElementById("board");
+  const difficultySelect = document.getElementById("difficulty");
+
   let board = ["", "", "", "", "", "", "", "", ""];
   let human = "X";
   let ai = "O";
@@ -76,21 +111,58 @@
     createBoard();
 
     if (checkWinner(board, human)) {
-      alert("You win!");
+      setTimeout(() => alert("🎉 You win!"), 100);
       gameOver = true;
       return;
     }
 
     if (isDraw()) {
-      alert("Draw!");
+      setTimeout(() => alert("🤝 Draw!"), 100);
       gameOver = true;
       return;
     }
 
-    setTimeout(aiMove, 300);
+    setTimeout(aiMove, 400);
   }
 
   function aiMove() {
+    let difficulty = difficultySelect.value;
+    let move;
+
+    if (difficulty === "easy") {
+      move = randomMove();
+    } 
+    else if (difficulty === "medium") {
+      move = Math.random() < 0.5 ? randomMove() : bestMove();
+    } 
+    else {
+      move = bestMove(); // hard
+    }
+
+    board[move] = ai;
+    createBoard();
+
+    if (checkWinner(board, ai)) {
+      setTimeout(() => alert("🤖 AI wins!"), 100);
+      gameOver = true;
+      return;
+    }
+
+    if (isDraw()) {
+      setTimeout(() => alert("🤝 Draw!"), 100);
+      gameOver = true;
+    }
+  }
+
+  function randomMove() {
+    let empty = board
+      .map((v, i) => v === "" ? i : null)
+      .filter(v => v !== null);
+
+    return empty[Math.floor(Math.random() * empty.length)];
+  }
+
+  function bestMove() {
     let bestScore = -Infinity;
     let move;
 
@@ -105,20 +177,7 @@
         }
       }
     }
-
-    board[move] = ai;
-    createBoard();
-
-    if (checkWinner(board, ai)) {
-      alert("AI wins!");
-      gameOver = true;
-      return;
-    }
-
-    if (isDraw()) {
-      alert("Draw!");
-      gameOver = true;
-    }
+    return move;
   }
 
   function minimax(newBoard, depth, isMaximizing) {
@@ -157,10 +216,7 @@
       [0,3,6],[1,4,7],[2,5,8],
       [0,4,8],[2,4,6]
     ];
-
-    return wins.some(combo =>
-      combo.every(i => b[i] === player)
-    );
+    return wins.some(combo => combo.every(i => b[i] === player));
   }
 
   function isDraw() {
